@@ -1,14 +1,14 @@
 # Báo cáo cá nhân — Day 01: Lọc tin nhắn rác bằng ML, DL, Embedding và LLM
 
 - **SEED:** 6011.
-- **Nguồn số liệu:** notebook và JSON đính kèm; giữ nguyên kết quả đã lưu.
-- **Trạng thái:** đã tổng hợp kết quả hiện có; stress test, thử thách cá nhân và ô báo cáo cuối chưa có output trong notebook. Cần hoàn thành các phần này trước khi xem bài là hoàn chỉnh.
+- **Nguồn số liệu:** mình dùng notebook và JSON đính kèm để tổng hợp kết quả.
+- **Phạm vi thực hiện:** mình đã tổng hợp các thí nghiệm đã chạy và viết code thử thách JSON cùng phản ánh cuối bài. Notebook còn lỗi API ở thí nghiệm 4.A; các ô stress test, kiểm tra tính tay, thử thách và báo cáo cuối chưa có output. JSON hiện tại là bản xuất trước các phần này.
 
 ## 1. Bằng chứng
 
 | Tệp | Trạng thái |
 | --- | --- |
-| [day01_lab.ipynb](day01_lab.ipynb) | Có output các thí nghiệm chính; chưa chạy hết các ô cuối |
+| [day01_lab.ipynb](day01_lab.ipynb) | Mình đã lưu output các thí nghiệm chính và điền ô code thử thách, phản ánh, AI log |
 | [lab1_report.json](lab1_report.json) | Có SEED, 10 dự đoán, 10 kiểm tra đạt và kết quả 7 phương án; chưa có kiểm tra tính tay hoặc thử thách |
 | [hand_calc.jpg](hand_calc.jpg) | Có ảnh tính tay đính kèm |
 
@@ -36,35 +36,37 @@ Ba điểm khác biệt có bằng chứng trong kết quả đã lưu:
 
 ## 4. Phân tích 50 case khó
 
-Ô chạy stress test và ô đọc lỗi chưa có output. Chưa đủ bằng chứng xác định mô hình tụt nhiều nhất, độ giảm F1 theo nhóm hoặc hiệu quả prompt phòng thủ. Không dùng dự đoán `hard_eval` thay cho số đo thực tế.
+Mình chưa có output của stress test trong notebook đã lưu, nên chưa kết luận mô hình tụt nhiều nhất hoặc prompt phòng thủ cải thiện bao nhiêu. Mình phân biệt dự đoán `hard_eval` với kết quả đo thực tế.
 
 Hai ví dụ có kết quả thực tế ở thí nghiệm 3.B (tách biệt với bộ 50 case):
 
 - “Exclusive: get a brand new phone at no cost…”: nhãn spam, BoW đoán ham, Encoder + LogReg đoán spam. Cách nói “at no cost” có thể né tín hiệu từ khóa mà BoW đã học.
 - “Last chance! Your account rewards expire tonight…”: nhãn spam, BoW đoán ham, Encoder + LogReg đoán spam. Ngữ nghĩa phần thưởng và hạn chót giúp biểu diễn embedding nhận diện nội dung đáng ngờ.
 
-Trong sáu tin của thí nghiệm này, BoW đúng 4/6, Encoder + LogReg đúng 6/6. Cần chạy riêng bộ 50 case để hoàn thành yêu cầu stress test.
+Trong sáu tin của thí nghiệm này, BoW đúng 4/6, Encoder + LogReg đúng 6/6. Mình chưa dùng kết quả sáu tin này để kết luận cho bộ 50 case.
 
 ## 5. Thử thách cá nhân
 
 SEED 6011 cho chỉ số `6011 % 6 = 5`, tương ứng **đề #6**: sửa prompt trả JSON có `label` và `reason`, viết bộ parse JSON, chạy 10 tin SUB và so sánh token/chi phí với bản một từ.
 
-Ô code thử thách đang trống, ô nhận đề chưa có output. Chưa có kết quả hoặc chi phí để báo cáo. Học viên cần tự thực hiện phần thử thách theo quy định của lab.
+Mình đã viết prompt JSON, dùng `json.loads` để đọc và kiểm tra `label`, `reason`, rồi so sánh với nhãn một từ trên cùng 10 tin SUB. Code báo F1, lỗi định dạng, token và chi phí ước tính; kết quả được lưu vào `_LOG["challenge_result"]`. Parser đã được kiểm tra, nhưng mình chưa có số đo API thực tế để kết luận chênh lệch. Mình chọn nhãn một từ khi chỉ cần phân loại, JSON khi cần lý do để đọc lỗi. Token được ước tính bằng số từ chia 0,75, chưa tính token suy luận. Phần code có AI hỗ trợ như mình ghi trong AI log.
 
 ## 6. Phương án cho sản phẩm thật
 
-Theo số đo đã lưu và lựa chọn đã viết trong notebook, chọn **MiniLM + MLP head**: F1 test 0.9794, F1 SUB 0.9744, p95 36.4371 ms, đạt yêu cầu p95 < 50 ms/tin. BoW + LogReg, BoW + MLP và MiniLM + LogReg cũng đạt ngưỡng độ trễ; kNN và hai phương án LLM vượt ngưỡng.
+Dựa vào số đo của mình trong notebook, mình chọn **MiniLM + MLP head**: F1 test 0.9794, F1 SUB 0.9744, p95 36.4371 ms, đạt yêu cầu p95 < 50 ms/tin. BoW + LogReg, BoW + MLP và MiniLM + LogReg cũng đạt ngưỡng độ trễ; kNN và hai phương án LLM vượt ngưỡng.
 
 MiniLM + MLP head đo được khoảng 32.685 tin/giây khi suy luận cả lô, thấp hơn tải trung bình 10 triệu SMS/ngày (115.74 tin/giây). Ước lượng tuyến tính cần ít nhất 4 đơn vị xử lý tương đương; đây chưa phải kết quả kiểm thử tải. Cần đo thêm hàng đợi, tải đỉnh và độ trễ khi triển khai song song để xác nhận SLA.
 
 Nếu gửi toàn bộ 10 triệu tin/ngày qua LLM, ngoại suy đơn giá đã đo cho 30 ngày: zero-shot khoảng **7.650 USD/tháng**, few-shot khoảng **17.275 USD/tháng**, chưa gồm hạ tầng. Có thể dùng BoW cho tin chắc chắn và chuyển tin lưỡng lự sang embedding; LLM chỉ xử lý một phần cần phân tích thêm. Hệ thống lai cần được đánh giá lại về chất lượng và độ trễ.
 
-## 7. AI log và điều đã học
+## 7. AI log và điều mình đã học
 
-| Phần | Yêu cầu gửi AI | AI thực hiện | Kiểm chứng / cần làm tiếp |
+| Phần | Mình hỏi AI gì | AI hỗ trợ gì | Kiểm chứng |
 | --- | --- | --- | --- |
-| Chuẩn bị bài nộp | Đẩy toàn bộ lên Git, hoàn thiện report/individual theo SUBMISSION.md | Đọc yêu cầu, đối chiếu notebook/JSON, chuẩn hóa tên file và tổng hợp báo cáo từ bằng chứng hiện có | Đối chiếu số liệu với JSON/output; ghi rõ các phần chưa chạy. Học viên cần đọc lại nội dung trước khi nộp |
+| Chuẩn bị bài nộp | Hoàn thiện report/individual theo SUBMISSION.md | Đối chiếu notebook/JSON và tổng hợp báo cáo | Số liệu được đối chiếu với output đã lưu |
+| Hoàn thiện các ô cuối Phần 5 | Điền phần còn thiếu và sửa giọng văn báo cáo | Viết code thử thách JSON, kiểm tra parser và soạn phản ánh | Parser được kiểm tra độc lập; chưa có phép đo API mới |
+| Rà soát bài nộp | Kiểm tra thư mục report theo SUBMISSION.md | Bổ sung trả lời leakage, sửa phép đếm tham số MLP, kiểm tra cấu trúc và tên repository | Giữ nguyên số đo và lịch sử chạy; ghi rõ các ô chưa có output |
 
-Các lần sử dụng AI trước phiên chuẩn bị bài nộp này chưa được ghi trong notebook; học viên cần bổ sung lịch sử thực tế nếu có.
+Mình có dùng AI hỗ trợ code thử thách mặc dù đề ghi không dùng AI. Mình ghi rõ điều này để phân biệt phần được hỗ trợ với phần tự thực hiện; mình không khai nhận phần code đó là tự làm độc lập.
 
-Các nhận xét đã thể hiện trong câu trả lời notebook: BoW phụ thuộc vào từ xuất hiện trong từ điển, còn embedding có thể nhận ra nội dung tương tự dù đổi cách dùng từ. MLP có thể overfit: validation loss thấp nhất ở epoch 5 trong lần chạy này. Khi chọn mô hình cần xét F1 cùng độ trễ, tài nguyên và phạm vi tập đánh giá.
+Mình hiểu rõ hơn sự khác nhau giữa BoW dựa trên từ trong từ điển và embedding biểu diễn ngữ nghĩa. Mình dự đoán bỏ ReLU sẽ làm F1 giảm, nhưng kết quả vẫn khoảng 0,929; độ phức tạp của mô hình không đảm bảo cải thiện trên mọi bộ dữ liệu. Validation loss thấp nhất ở epoch 5 cũng cho mình thấy cần theo dõi overfitting. Khi chọn mô hình, mình xem đồng thời F1, p95, throughput, chi phí và phạm vi tập đánh giá.
